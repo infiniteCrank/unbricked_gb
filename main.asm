@@ -128,6 +128,8 @@ ClearOam:                       ;define a new label ClearOam
     ; Initialize global variables
     ld a, 0
     ld [wFrameCounter], a       ;set wFrameCounter to zero
+    ld [wCurKeys], a
+    ld [wNewKeys], a
 
 Main:                           ;infinite game loop
 
@@ -155,6 +157,38 @@ WaitVBlank2:
     ;ld a, [_OAMRAM + 1]
     ;inc a
     ;ld [_OAMRAM + 1], a
+    ; Check the current keys every frame and move left or right.
+    call UpdateKeys
+
+    ; First, check if the left button is pressed.
+CheckLeft:
+    ld a, [wCurKeys]
+    and a, PADF_LEFT
+    jp z, CheckRight
+Left:
+    ; Move the paddle one pixel to the left.
+    ld a, [_OAMRAM + 1]
+    dec a
+    ; If we've already hit the edge of the playfield, don't move.
+    cp a, 15
+    jp z, Main
+    ld [_OAMRAM + 1], a
+    jp Main
+
+; Then check the right button.
+CheckRight:
+    ld a, [wCurKeys]
+    and a, PADF_RIGHT
+    jp z, Main
+Right:
+    ; Move the paddle one pixel to the right.
+    ld a, [_OAMRAM + 1]
+    inc a
+    ; If we've already hit the edge of the playfield, don't move.
+    cp a, 105
+    jp z, Main
+    ld [_OAMRAM + 1], a
+    jp Main
 
     jp Main
 

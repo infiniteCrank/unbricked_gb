@@ -33,43 +33,50 @@ ld bc, TilesEnd - Tiles         ;copy the result of subtracting tiles end from t
                                 ;   this effectivly gives us the size of data we are going to be working with 
                                 ;   it is common to store size data in bc before a transfer of data 
 ;this actually copies the title data we prepped above 
-CopyTiles:              
-    ld a, [de]                  ;load the title data into the accumlator to process 
-    ld [hli], a                 ;load accumlator data to hl and increment by one
+;CopyTiles:              
+    ;ld a, [de]                  ;load the title data into the accumlator to process 
+    ;ld [hli], a                 ;load accumlator data to hl and increment by one
                                 ;   incrementing by one ensure the next byte of data gets stored in the next address
-    inc de                      ;increment de (move the pointer up the next byte)
-    dec bc                      ;decrement bc subtract a byte from the total bits 
+    ;inc de                      ;increment de (move the pointer up the next byte)
+    ;dec bc                      ;decrement bc subtract a byte from the total bits 
                                 ;   this tracks how many bytes there are left to copy 
-    ld a, b                     ;load the first byte of bc into the accumulator 
-    or a, c                     ;do a logical or between b and c 
+    ;ld a, b                     ;load the first byte of bc into the accumulator 
+    ;or a, c                     ;do a logical or between b and c 
                                 ;B || C if both are zero return 0 flag 
-    jp nz, CopyTiles            ;if there is no zero flag keep coping data 
+    ;jp nz, CopyTiles            ;if there is no zero flag keep coping data 
+;functionize the above 
+call Memcopy
 
 ;Copy the tilemap
     ld de, Tilemap              ;copy data from tilemap to de for storage
     ld hl, $9800                ;load hl with address $9800 the start of tilemap
     ld bc, TilemapEnd - Tilemap ;get the total size of tile mape 
-CopyTilemap:                    ;make a label called CopyTileMap
-    ld a, [de]                  ;load the first byte of tilemap data 
-    ld [hli], a                 ;write the tile data and move the piece of data  
-    inc de                      ;move the pointer up to that next byte to be processesed 
-    dec bc                      ;subtract this byte form teh total bytes 
-    ld a, b                     ;load b byte to see if its zero
-    or a, c                     ; checkif both b and c are zero
-    jp nz, CopyTilemap          ;if the next byte is not zero process it 0
+
+;CopyTilemap:                    ;make a label called CopyTileMap
+    ;ld a, [de]                  ;load the first byte of tilemap data 
+    ;ld [hli], a                 ;write the tile data and move the piece of data  
+    ;inc de                      ;move the pointer up to that next byte to be processesed 
+    ;dec bc                      ;subtract this byte form teh total bytes 
+    ;ld a, b                     ;load b byte to see if its zero
+    ;or a, c                     ; checkif both b and c are zero
+    ;jp nz, CopyTilemap          ;if the next byte is not zero process it 0
+;functionize the above 
+call Memcopy
 
     ; Copy the paddle tile
     ld de, Paddle
     ld hl, $8000
     ld bc, PaddleEnd - Paddle
-CopyPaddle:
-    ld a, [de]
-    ld [hli], a
-    inc de
-    dec bc
-    ld a, b
-    or a, c
-    jp nz, CopyPaddle
+;CopyPaddle:
+    ;ld a, [de]
+    ;ld [hli], a
+    ;inc de
+    ;dec bc
+    ;ld a, b
+    ;or a, c
+    ;jp nz, CopyPaddle
+;functionize the above 
+call Memcopy
 
     ;clear OAMRAM (Object Attribute Memory) this is where sprites are stored 
     ;   must do this while the screen is off
@@ -145,9 +152,9 @@ WaitVBlank2:
     ld [wFrameCounter], a
 
     ; Move the paddle one pixel to the right.
-    ld a, [_OAMRAM + 1]
-    inc a
-    ld [_OAMRAM + 1], a
+    ;ld a, [_OAMRAM + 1]
+    ;inc a
+    ;ld [_OAMRAM + 1], a
 
     jp Main
 
@@ -401,12 +408,6 @@ Tilemap:
 	db $04, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $07, $03, $03, $03, $03, $03, $03, 0,0,0,0,0,0,0,0,0,0,0,0
 TilemapEnd:
 
-; this allows access to RAM
-SECTION "Counter", WRAM0
-
-;create a global variable wFrameCounter
-wFrameCounter: db
-
 ; Copy bytes from one area to another.
 ; @param de: Source
 ; @param hl: Destination
@@ -420,3 +421,51 @@ Memcopy:
     or a, c
     jp nz, Memcopy
     ret
+
+UpdateKeys:
+  ; Poll half the controller
+  ld a, P1F_GET_BTN
+  call .onenibble
+  ld b, a ; B7-4 = 1; B3-0 = unpressed buttons
+
+  ; Poll the other half
+  ld a, P1F_GET_DPAD
+  call .onenibble
+  swap a ; A3-0 = unpressed directions; A7-4 = 1
+  xor a, b ; A = pressed buttons + directions
+  ld b, a ; B = pressed buttons + directions
+
+  ; And release the controller
+  ld a, P1F_GET_NONE
+  ldh [rP1], a
+
+  ; Combine with previous wCurKeys to make wNewKeys
+  ld a, [wCurKeys]
+  xor a, b ; A = keys that changed state
+  and a, b ; A = keys that changed to pressed
+  ld [wNewKeys], a
+  ld a, b
+  ld [wCurKeys], a
+  ret
+
+.onenibble
+  ldh [rP1], a ; switch the key matrix
+  call .knownret ; burn 10 cycles calling a known ret
+  ldh a, [rP1] ; ignore value while waiting for the key matrix to settle
+  ldh a, [rP1]
+  ldh a, [rP1] ; this read counts
+  or a, $F0 ; A7-4 = 1; A3-0 = unpressed keys
+.knownret
+  ret
+
+; this allows access to RAM
+SECTION "Counter", WRAM0
+
+;create a global variable wFrameCounter to count frames 
+wFrameCounter: db
+
+;variables for player input
+SECTION "Input Variables", WRAM0
+wCurKeys: db
+wNewKeys: db
+

@@ -103,6 +103,12 @@ ld b, 16            ; Load the number of bytes to copy into B (16 bytes per tile
     ld [wFrameCounter], a       ;set wFrameCounter to zero
     ld [wCurKeys], a
     ld [wNewKeys], a
+    
+    ; The ball starts out going up and to the right
+    ld a, 1
+    ld [wBallMomentumX], a
+    ld a, -1
+    ld [wBallMomentumY], a
 
 Main:                           ;infinite game loop
 
@@ -114,6 +120,19 @@ WaitVBlank2:
     ld a, [rLY]
     cp 144
     jp c, WaitVBlank2
+
+; Add the ball's momentum to its position in OAM.
+    ld a, [wBallMomentumX]
+    ld b, a
+    ld a, [_OAMRAM + 5]
+    add a, b
+    ld [_OAMRAM + 5], a
+
+    ld a, [wBallMomentumY]
+    ld b, a
+    ld a, [_OAMRAM + 4]
+    add a, b
+    ld [_OAMRAM + 4], a
 
     ;Every 5 frames (a quarter of a second), run the following code
     ld a, [wFrameCounter]       ;the next few line sum up to wFrameCounter ++
@@ -477,3 +496,7 @@ wFrameCounter: db
 SECTION "Input Variables", WRAM0
 wCurKeys: db
 wNewKeys: db
+
+SECTION "Ball Data", WRAM0
+wBallMomentumX: db
+wBallMomentumY: db

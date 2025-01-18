@@ -57,7 +57,7 @@ call Memcopy
     ; The first sprite is in the top-left corner of the screen and uses the "normal" palette
     ld a, 128 + 16            ; Load the value 16 into the A register
     ld [hli], a         ; Set the Y coordinate (plus 16) for the sprite in OAMRAM, increment HL
-    sub 8               ; Subtract 8 from the value stored in A and store the result in A
+    ld a, 16 + 8               ; Subtract 8 from the value stored in A and store the result in A
     ld [hli], a         ; Set the X coordinate (plus 8) for the sprite in OAMRAM, increment HL
     ld a, 0             ; Load the tile index 0 into the A register
     ld [hli], a         ; Set the tile index for the sprite in OAMRAM, increment HL

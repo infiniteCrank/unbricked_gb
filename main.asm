@@ -51,6 +51,9 @@ call Memcopy
     ld a, %11100100     ; Define a 4-shade palette from darkest (11) to lightest (00)
     ldh [rOBP0], a      ; Set the onject palette 0
 
+    ld a, %11100100
+    ld [rBGP], a
+
     ; Set the attributes for a two sprites in OAMRAM
     ld hl, _OAMRAM      ; Load the destination address in OAMRAM into HL
 

@@ -1,5 +1,9 @@
 include "hardware.inc"  ; Include hardware definitions so we can use nice names for things
 
+DEF BRICK_LEFT EQU $05
+DEF BRICK_RIGHT EQU $06
+DEF BLANK_TILE EQU $08
+
 ; Define a section that starts at the point the bootrom execution ends
 SECTION "Start", ROM0[$0100]
     jp EntryPoint       ; Jump past the header space to our actual code
@@ -169,6 +173,7 @@ BounceOnTop:
     ld a, [hl]
     call IsWallTile
     jp nz, BounceOnRight
+    call CheckAndHandleBrick
     ld a, 1
     ld [wBallMomentumY], a
 
@@ -183,6 +188,7 @@ BounceOnRight:
     ld a, [hl]
     call IsWallTile
     jp nz, BounceOnLeft
+    call CheckAndHandleBrick
     ld a, -1
     ld [wBallMomentumX], a
 
@@ -197,6 +203,7 @@ BounceOnLeft:
     ld a, [hl]
     call IsWallTile
     jp nz, BounceOnBottom
+    call CheckAndHandleBrick
     ld a, 1
     ld [wBallMomentumX], a
 
@@ -211,15 +218,16 @@ BounceOnBottom:
     ld a, [hl]
     call IsWallTile
     jp nz, BounceDone
+    call CheckAndHandleBrick
     ld a, -1
     ld [wBallMomentumY], a
 BounceDone:
 
-    ;Every 5 frames (a quarter of a second), run the following code
+    ;Every 2 frames (a quarter of a second), run the following code
     ld a, [wFrameCounter]       ;the next few line sum up to wFrameCounter ++
     inc a
     ld [wFrameCounter], a
-    cp a, 5                    ;check to see if wFrameCounter is 5
+    cp a, 2                    ;check to see if wFrameCounter is 2
     jp nz, Main                 ;if its not go bac to main
 
     ; Reset the frame counter back to 0
@@ -565,6 +573,25 @@ IsWallTile:
     cp a, $06
     ret z
     cp a, $07
+    ret
+
+; Checks if a brick was collided with and breaks it if possible.
+; @param hl: address of tile.
+CheckAndHandleBrick:
+    ld a, [hl]
+    cp a, BRICK_LEFT
+    jr nz, CheckAndHandleBrickRight
+    ; Break a brick from the left side.
+    ld [hl], BLANK_TILE
+    inc hl
+    ld [hl], BLANK_TILE
+CheckAndHandleBrickRight:
+    cp a, BRICK_RIGHT
+    ret nz
+    ; Break a brick from the right side.
+    ld [hl], BLANK_TILE
+    dec hl
+    ld [hl], BLANK_TILE
     ret
 
 ; Copy bytes from one area to another.

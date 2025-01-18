@@ -30,15 +30,21 @@ ld bc, TilesEnd - Tiles         ;copy the result of subtracting tiles end from t
 call Memcopy
 
 ;Copy the tilemap
-    ld de, Tilemap              ;copy data from tilemap to de for storage
-    ld hl, $9800                ;load hl with address $9800 the start of tilemap
-    ld bc, TilemapEnd - Tilemap ;get the total size of tile mape 
+ld de, Tilemap              ;copy data from tilemap to de for storage
+ld hl, $9800                ;load hl with address $9800 the start of tilemap
+ld bc, TilemapEnd - Tilemap ;get the total size of tile mape 
 call Memcopy
 
-    ; Copy our paddle to VRAM
-    ld hl, TileData     ; Load the source address of our tiles into HL
-    ld de, _VRAM        ; Load the destination address in VRAM into DE
-    ld b, 16            ; Load the number of bytes to copy into B (16 bytes per tile)
+; Copy the ball tile
+ld de, Ball
+ld hl, $8010
+ld bc, BallEnd - Ball
+call Memcopy
+
+; Copy our paddle to VRAM
+ld hl, PaddleData     ; Load the source address of our tiles into HL
+ld de, _VRAM        ; Load the destination address in VRAM into DE
+ld b, 16            ; Load the number of bytes to copy into B (16 bytes per tile)
 .copyLoop
     ld a, [hl]          ; Load a byte from the address HL points to into the register A
     ld [de], a          ; Load the byte in the A register to the address DE points to
@@ -65,6 +71,15 @@ call Memcopy
     ld a, 0             ; Load the tile index 0 into the A register
     ld [hli], a         ; Set the tile index for the sprite in OAMRAM, increment HL
     ld [hli], a         ; Set the attributes (flips and palette) for the sprite in OAMRAM, increment HL
+   ; Now initialize the ball sprite
+    ld a, 100 + 16
+    ld [hli], a
+    ld a, 32 + 8
+    ld [hli], a
+    ld a, 1
+    ld [hli], a
+    ld a, 0
+    ld [hli], a
 
     ; Zero the Y coordinates of the remaining entries to avoid garbage sprites
     xor a               ; XOR A with itself, which sets A to zero (and affects the flags)
@@ -380,8 +395,7 @@ Tilemap:
 	db $04, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $09, $07, $03, $03, $03, $03, $03, $03, 0,0,0,0,0,0,0,0,0,0,0,0
 TilemapEnd:
 
-TileData:
-.ball ; For the ball tile we'll use a more verbose syntax so you can see how the tile is built
+PaddleData:
     dw `13333331
     dw `30000003
     dw `13333331
@@ -390,6 +404,18 @@ TileData:
     dw `00000000
     dw `00000000
     dw `00000000
+PaddleDataEnd:
+
+Ball:
+    dw `00033000
+    dw `00322300
+    dw `03222230
+    dw `03222230
+    dw `00322300
+    dw `00033000
+    dw `00000000
+    dw `00000000
+BallEnd:
 
 ; Copy bytes from one area to another.
 ; @param de: Source

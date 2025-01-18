@@ -97,11 +97,11 @@ WaitVBlank2:
     cp 144
     jp c, WaitVBlank2
 
-    ;Every 15 frames (a quarter of a second), run the following code
+    ;Every 5 frames (a quarter of a second), run the following code
     ld a, [wFrameCounter]       ;the next few line sum up to wFrameCounter ++
     inc a
     ld [wFrameCounter], a
-    cp a, 15                    ;check to see if wFrameCounter is 15
+    cp a, 5                    ;check to see if wFrameCounter is 5
     jp nz, Main                 ;if its not go bac to main
 
     ; Reset the frame counter back to 0

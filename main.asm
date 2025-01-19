@@ -107,7 +107,11 @@ ld b, 16            ; Load the number of bytes to copy into B (16 bytes per tile
     ld [wFrameCounter], a       ;set wFrameCounter to zero
     ld [wCurKeys], a
     ld [wNewKeys], a
-    
+
+    ;player starts with 5 lives 
+    ld a, 5
+    ld [wLife], a
+
     ; The ball starts out going up and to the right
     ld a, 1
     ld [wBallMomentumX], a
@@ -221,6 +225,10 @@ BounceOnBottom:
     call CheckAndHandleBrick
     ld a, -1
     ld [wBallMomentumY], a
+    ;subtract one life frmo the 5 lives 
+    ld a, [wLife]
+    sub a, 1
+    ld [wLife], a 
 BounceDone:
 
     ;Every 2 frames (a quarter of a second), run the following code
@@ -646,9 +654,9 @@ UpdateKeys:
 
 ; this allows access to RAM
 SECTION "Counter", WRAM0
-
 ;create a global variable wFrameCounter to count frames 
 wFrameCounter: db
+wLife: db
 
 ;variables for player input
 SECTION "Input Variables", WRAM0
